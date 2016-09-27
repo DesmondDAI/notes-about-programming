@@ -10,3 +10,9 @@ $ command  [-options]  parameter1  parameter2 ...
   - `parameter1`和`parameter2`是依附在选项后的参数，或是`command`的参数
   - 指令太长时可以用反斜杠`\`号直接跟回车来跳到下一行继续输入，其实就是转义符，把回车`Enter`转义
   - 区分大小写
+
+- **`man`的一些memo:**
+  - Mac的**zsh**的上下跳跃（不算翻页，但比`Up/Down`跳跃范围更大）：`D`下跳，`U`上跳
+  - 翻页：`空格`键；`Page Up`/`Page Down`翻页
+  - 退出：`Q`键
+  - **搜索功能：**按下`/`键（向下搜索）或`?`键（向上搜索），然后输入需要搜索的文字。如：`/open`是搜索"open"。`n`键是跳到下一个match，`N`键则是跳到上一个
