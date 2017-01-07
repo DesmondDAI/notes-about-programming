@@ -187,3 +187,39 @@ var now : String {
   - `willSet`：接受到的是新的值，默认是`newValue`，可以改名。旧值此时还在变量中并且可以引用
   - `didSet`：接受到的是旧的值，默认是`oldValue`，可以改名。新值此时已经在变量中并且可以引用
   - 计算变量值不能添加上述观察者因为不需要：在`set`里可以自由在设定变量值前后添加逻辑
+
+- 懒初始化(lazy initialization)：如果一个变量在声明中同时有声明初始化，在懒初始化下，只有当
+变量被取用(access)时才会计算或赋初始值
+  - 默认懒初始化：全局变量(global)和静态变量(static)
+  - 需要显式声明初始化：对象属性。如：`lazy var name = "Desmond"`
+  - 可用于创建singleton
+  - 对象属性的懒初始化可用于创建成本高的变量。因为在需要时才创建，所以提高了效率
+  - NOTE：全局变量和静态变量的懒初始化变量默认是线程安全和atomic的，但对象属性则不是
+
+### 内建变量类型
+- `Bool`：`struct`类型，取值`true`或`false`
+  - 仅具有`true`或`false`的值，不像其他语言(Java或C)，0可以代表false
+- `Optional`：可以看作一种数据类型，形象上可以理解为盒子，里面可以装着某个特定类型的数据，也可以是空的
+  - 声明方式：1)`var stringMayBe = Optional("howdy")` 2)`var stringMayBe: String? = "howdy"`
+  - `Optional`包了一种数据类型之后，就不能被赋值其他类型的值
+  - 正式来说，`Optional`是一种泛型，如包了`String`的`Optional`是Optional<String>
+  - 把一个同类型的值（即`Optional`包着的类型的其他值）复制给`Optional`时，编译器会隐式将新值包成`Optional`
+  - 要取得`Optional`里的数据值，需要解包，如：`var stringInside = stringMayBe!`（`!`强制解包）
+  - 隐式`Optional`：取用时不需要使用`!`来解包，编译器隐式添加（当然显式添加`!`也没问题），如：`var stringMayBe: String! = "howdy"; var stringInside = stringMayBe`。
+  本质上讲，隐式`Optional`依旧是`Optional`，只是多了隐式解包数值。并且在Swift3里，隐式`Optional`在赋值中不会传递，即赋值后会成为普通`Optional`，需要显式解包符号`!`
+  - `Optional`**的其中一个重点是没有包数据时的处理。** `nil`用于指代一个`Optional`没有包着数据，有以下两种情况：
+    - 检验一个`Optional`是否包着数据：检查`Optional`是否等于`nil`，如：`stringMayBe == nil`，返回`true`的话说明`stringMayBe`是空的
+    - 指代一个`Optional`是空的：把`nil`赋值给一个`Optional`，如：`stringMayBe = nil`，结果是`Optional`包着相同数据类型，但没有值
+  - `nil`的意思是说一个`Optional`包着同样数据类型，但没有数据实体。
+  - 一个`Optional`的`var`如果没有初始化的话，默认是`nil`
+  - **一个没有包裹数据实体的`Optional`不能被解包。** 如果解包这种等于`nil`的`Optional`，程序会崩溃。 --> 在解包`Optional`时，需要添加判断是否为`nil`的逻辑：
+    - 最简单的方式是判断是否等于`nil`
+  - **Optional chains:** 因为用`!`解包在`Optional`数据为空时会让程序崩溃，因此在需要发送信息(message)给所包的数据时，使用`?`来“选择性”地解包（unwrap the `Optional` *optionally*）
+    - `?`选择性解包在发送信息给一个所包数据对象时的意思是：如果所包数据不为空，即解包并且发送信息；否则**不解包并且不发送信息**
+    - `?`在发送信息后的返回值上同样返回`Optional`并且包着返回数据。并且只要有`?`解包，整个表达式就会返回`Optional`
+  - `Optional`的比较：如果两个`Optional`使用`==`进行非`nil`的比较，是比较所包数据值，编译器会自动安全地解包。但是不能使用除`==`意外的比较（Swift2可以，3不行）。如：`<`和`>`。此时需要先确保不是`nil`后再解包进行比较。
+  - `Optional`**的好处：**
+    - 提供与Objective-C数据类型互换的方式（因为需要处理OC的`nil`）。
+    - 推迟对象属性的初始化，如outlet：`@IBOutlet var myButton: UIButton!`。当viewController创建时，`myButton`并没有，因此`Optional`方便地给予其初始值为`nil`；接着当views被加载后`myButton`就指向一个`UIButton`对象，因此隐式`Optional`方便我们直接使用数据体。
+    - 相类似的，用于实质数据需要时间生成的对象属性。
+    - 允许一个变量表明自己是空的（可以理解为错误情况）还是有数值。
