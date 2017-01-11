@@ -197,9 +197,54 @@ var now : String {
   - NOTE：全局变量和静态变量的懒初始化变量默认是线程安全和atomic的，但对象属性则不是
 
 ### 内建变量类型
-- `Bool`：`struct`类型，取值`true`或`false`
+- **Bool**：`struct`类型，取值`true`或`false`
   - 仅具有`true`或`false`的值，不像其他语言(Java或C)，0可以代表false
-- `Optional`：可以看作一种数据类型，形象上可以理解为盒子，里面可以装着某个特定类型的数据，也可以是空的
+
+- **Numbers**：主要包括`Int`和`Double`
+  - `Int`：属于`struct`，代表`Int.max`到`Int.min`之间的整数
+    - 不带小数点的数字默认是`Int`
+    - 最大和最小值取决与平台
+    - 可以使用下划线，用以分隔比较大的整数
+    - 可以以0为前缀，用以位数的对齐
+    - 二进制：`0b`；八进制：`0o`；十六进制：`0x`
+  - `Double`：属于`struct`，代表带小数的数值
+    - 都小数点的数字默认是`Double`
+    - 科学表示法：`e`后面表示10的次方，如`3e2`是3*100
+    - 十六进制科学表示法：以`0x`开头，`p`后面表示2的次方，如`0x10p2`是64，即16*4
+    - 数值可以不以小数点开始（不同于C），以`0`开头代表在0到1之间的数值
+    - `Double`之间的`==`比较有时会出错，更可靠的方法把两者差的绝对值与一个标准值比较，如`let isEqual = abs(x - y) < 0.00001`
+  - 类型转换
+    - 数字可以隐式转换，如`Int/Double`是`Int`转换成`Double`
+    - 变量不可以隐式转换，需要显式转换，如`Int(i)`是把变量`i`转化成`Int`
+    - 有些情况不知道需要转换的类型，可以使用方法`numericCast(_:)`，如`i=numericCast(j)`是把`j`转换到`i`所属类型
+
+- **String**：底层是Unicode(表示方式为`\u{...}`，如`let leftTripleArrow = "\u{21DA}"`)
+  - 字符串插值（string interpolation）：任何可以被`print`的值都可以使用`\(...)`插入字符串中，如`let s = "You have \(1+2) widgets"`
+  - `+`重载用于连接字符串；`==`重载用于比较**字符串内容**的相等；
+  - `String`由一串Unicode codepoints组成，多个codepoints可以组成一个字符(Character)。对于Swift，`String`更多被理解为一串字符，而OC(`NSString`)被理解为一串UTF16的codepoints (因此OC更快，但Swift更直观) --> 因此当for loop时，Swift是遍历字符，OC是遍历codepoints
+  - Swift的`String`的很多类方法是来自`NSString`的。有些需要使用Foundation的数据类型时（如`NSRange`），需要先把`String`显式转换成`NSString`，如`let range = (s as NSString).range(of:"ell")`，否则方法会返回Swift的数据类型
+
+- **Character**：底层`struct`，一个Unicode字符簇，即直观上的字符。
+  - `String`下的字符数组（如`"hello".characters`）可以如array一般使用和修改。
+
+- **Range**：底层`struct`，代表一对端点。
+  - `...`代表包括头尾，如`a...b`；`..<`代表不包括尾
+  - 头不能比尾的数值小，否则crash；如果要从大到小，可以调用方法`reversed()`
+  - 当测试包含性时（`contains(_:)`），头尾可以是`Double`
+  - 可用在array的下标，如`array[1...3]`
+  - `Range`以两个端点代表范围，`NSRange`则以一个初始点和长度(`length`)来表示
+
+- **Tuple**：可定制的有顺序的数据集合，声明如`var pair: (Int, String)`
+  - 最大好处是用在函数返回值上，可以定制返回多个基本数据类型
+  - 可用于多个变量赋值，如`(name, gender) = ("Desmond", "M")`
+  - 使用下划线`_`来忽略某个子数据，如`(_, s) = (3, "hello")`，此处只把`s`赋值为`hello`
+  - 访问`Tuple`子数据的方法：
+    - **点符号`.`加上下标数**，如`var name = pair.0`
+    - **通过设置key**：`let pair = (first:Int, second:String); pair.first = 3`
+  - 可以使用`typealias`来定义一个`Tuple`的类型名：`typealias Point = (x:Int, y:Int)`
+  - 函数空返回的`Void`实质是空的`Tuple`，所以可以用`()`来表示（如`(Int, String) -> () in`的表示方式）
+
+- **Optional**：可以看作一种数据类型，形象上可以理解为盒子，里面可以装着某个特定类型的数据，也可以是空的
   - 声明方式：1)`var stringMayBe = Optional("howdy")` 2)`var stringMayBe: String? = "howdy"`
   - `Optional`包了一种数据类型之后，就不能被赋值其他类型的值
   - 正式来说，`Optional`是一种泛型，如包了`String`的`Optional`是Optional<String>
