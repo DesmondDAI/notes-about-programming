@@ -268,3 +268,58 @@ var now : String {
     - 推迟对象属性的初始化，如outlet：`@IBOutlet var myButton: UIButton!`。当viewController创建时，`myButton`并没有，因此`Optional`方便地给予其初始值为`nil`；接着当views被加载后`myButton`就指向一个`UIButton`对象，因此隐式`Optional`方便我们直接使用数据体。
     - 相类似的，用于实质数据需要时间生成的对象属性。
     - 允许一个变量表明自己是空的（可以理解为错误情况）还是有数值。
+
+### 对象类型(object types)
+- 对象类型的声明可以包括以下组件：
+  - **初始化(initializer)**
+    - 在所有properties初始化后才能使用`self`(如调用methods)
+    - 一个initializer可以调用另一个initializer (称为：delegating)，被调用的initializer必须先初始化所有properties
+    - failable initializer: 返回`Optional`的initializer，即`nil`指代错误 （`init?(...) {...}`）
+  - **属性(properties)**
+    - 对象属性（默认)
+      - 一个对象属性的初始化由其他对象属性生成，此时必须使用计算属性(computed properties)，或者添加`lazy`
+    - 类属性：`enum`或`struct`时，加前缀`static`；`class`时则加`class`
+      - 初始化可以由其他类属性生成，因为类属性是`lazy`
+    - 计算属性(computed properties)
+  - **方法(methods)**
+    - 对象方法（默认）
+      - 在方法体里，`self`指所属对象
+    - 类方法：`enum`或`struct`时，加前缀`static`；`class`时则加`class`
+      - 在方法体里，`self`指所属的类
+  - **下标(subscripts)**：通过传递参数到对象引用后的方括号`[]`来实现获取数据的调用，适合使用key或index来获取的数据
+  ```swift
+  subscript(index:Int) -> Int {
+      get {
+        return ...
+      }
+      set {
+        let self.s = newValue
+        ...
+      }
+  }
+  ```
+    - 默认不会externalize参数名（可能是bug）
+    - 如果只有getter，`get`关键字可以省略
+    - 可以声明多个`subscript`方法，使用不同的参数来区分
+  - **内嵌对象类型声明**
+
+#### Enums
+- `Enums`声明包括case声明，每个case就是一个enum的对象
+- 默认初始化一个enum对象：enum名字 + `.`符号 + case名字，如`let place = Position.center`；如果类型已知，可以省略enum名字，即：`let place: Position = .center`
+- 同样的缩写逻辑可以用在引用类属性是属于此类的对象上，如：`p.backgroundColor = .red // Instead of UIColor.red`
+- **Raw Values**：enum的每个case可以被赋予一个enum范围内唯一的固定数值
+```swift
+enum PepBoy: Int {
+  case manny
+  case moe
+  case jack
+}
+```
+  - 类型是`Int`但没有显式赋值时，从0开始
+  - 类型是`String`但没有显式赋值时，与case同名
+  - 可以使用raw value逆向得到case，但得到的会是`Optional`，但可以不用解包就直接比较（enum的特性？）
+  ```swift
+  let type = Filter(rawValue:"Albums")
+  if type == .albums { // ...
+  }
+  ```
