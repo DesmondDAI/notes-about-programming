@@ -304,6 +304,7 @@ var now : String {
   - **内嵌对象类型声明**
 
 #### Enums
+- 数值类型(value type)
 - `Enums`声明包括case声明，每个case就是一个enum的对象
 - 默认初始化一个enum对象：enum名字 + `.`符号 + case名字，如`let place = Position.center`；如果类型已知，可以省略enum名字，即：`let place: Position = .center`
 - 同样的缩写逻辑可以用在引用类属性是属于此类的对象上，如：`p.backgroundColor = .red // Instead of UIColor.red`
@@ -323,3 +324,61 @@ enum PepBoy: Int {
   if type == .albums { // ...
   }
   ```
+  - 可以有对象属性或类属性；对象属性只能是计算属性
+  - 可以有对象方法或类方法；涉及更改`enum`对象或属性的方法需要在前面加`mutating`
+
+#### Structs
+- 数值类型 (value type)：更改`struct`对象属性实质是更改整个`struct`对象
+- 自带隐式`init()`；如果显式声明`init`，隐式的会失效
+- 如果`struct`对象有储存属性（stored properties）但没有声明显式`init`的话，隐式的`init`会是**memberwise initializer**; 如果有显式`init`的话，显式`init`必须能够初始化所有的储存属性
+- 可以有对象方法或类方法；涉及更改`struct`对象或属性的方法需要在前面加`mutating`
+- 带有类属性的`struct`适合用作全局常量
+
+#### Classes
+- 可以包括`class`或`static`的属性和方法：最大区别在`static`的不能被重载（类似`final`的效果）
+- 引用类型 (reference type) --> 对比数值类型有以下特点：
+  - **易变性 (mutability)**：引用对象的对象属性可以被更改
+  - **一个对象，多个引用**
+- 性能上比`struct`差一些，因此如果不需要用到`class`的特性时（如继承，多引用等），尽量使用`struct`
+- 可以递归引用（即对象属性是自己类别，如`Dog`有一个类别是`Dog`对象属性）；数值类型不可以递归引用（内存的使用原理所限制）
+- **函数是引用类型**
+- **sub class**与**super class**：Swift里一个`class`可以没有父类
+  - **继承 (inheritence)**：需要声明`override`，否则不会继承
+    - 继承父类方法的子类方法需要显式调用`super.method()`来调用父类的方法
+    - subscript的方法继承同理（需要声明`override`；可以调用`super`）
+    - 可以声明`final`来阻止被继承
+  - **初始化方法 (initializer)**：目的是保证所有对象属性在对象被创建后都是可用的，保证对象的完整性
+    - 指定初始化方法 (designated initializer)：默认的初始化方法，任何在声明时没有被赋予初值的对象属性都**必须**在
+    designated initializer里初始化；因此对象初始化时必须**至少有一个**designated initializer被调用；不可以调用其他initializer (即不能`self.init(...)`)；相当于类的最根本的initializer
+    - 便利初始化方法 (convenience initializer)：声明为`convenience`；必须包括`self.init(...)`，即调用designated或其他convenience（因此最终以designated为调用层级的最底层），我的理解是它们像定位在API的初始化方法
+    - 隐式初始化方法 (implicit initializer)：当类没有储存属性（stored properties），或者所有储存属性在声明时已被赋予初值并且没有designated initializer，此时类就会有`init()`的隐式初始化方法
+  - **sub class初始化方法的情况**：
+    - 没有声明初始化方法：所有初始化方法继承自父类
+    - 仅有convenience initializer：必须通过`self.init(...)`来调用父类的初始化方法
+    - 带有designated initializer：所有父类的initializer将被屏蔽（即子类的所有初始化方法将只有子类声明的初始化方法）
+      - 子类designated必须通过`super.init(...)`来调用父类的designated initializer，并且需要遵循以下步骤：
+        - 初始化所有子类里的所有对象属性；
+        - 调用父类的designated initializer: `super.init(...)`
+        - 其他所需的动作
+    - 带有designated和convenience：除同样遵守一般convenience的约束外，因为父类的initializer都被屏蔽了，因此必须调用子类声明的designated或其他convenience initializer
+    - 重载初始化方法：
+      - 如果与父类convenience同名（参数相同），那么子类的重载可以是designated或convenience，**不需要**声明`override`
+      - 如果与父类designated同名，那么子类的重载可以是designated或convenience，**必须**声明`override`
+    - **总结**：如果子类有designated initializer，则不会继承父类的任何initializer；但如果子类重载**所有**的父类
+    designated initializer，则同时也会继承父类的所有convenience initializer
+    - failable initializer （规则暂时不太明白所有没写下来）
+    - required initializer：如果父类的initializer被声明为`required`，则子类不能没有此initializer。换一种说法是，
+    当子类不能继承父类的initializer时（在声明自己的designated initializer时），子类必须**重载**父类的required initializer。
+    同时子类在重载时，必须同样声明`required`而不是`override`，如此保证`required`能够传递给其他子类
+  - **属性与方法的重载**：必须声明`override`
+    - **重载后**的属性不能是储存属性（stored properties），具体表现为：
+      - 如果父类属性可写（储存属性或者带`setter`的计算属性），子类重载的属性要么加setter的观察者功能（observer）；要么重载的属性为计算属性，包括：1）如果父类的是储存属性，子类重载的计算属性需要有`getter`和`setter`；2）如果父类的是计算属性，子类重载的计算属性需要实现同样数量的`getter`和`setter`，如果父类只有`getter`，子类可以加`setter`
+    - 子类重载的属性可以通过`super`来读写继承自父类的属性
+    - `static` vs `class`的方法：`static`不能被重载，`class`可以被重载为`static`或`class`的方法
+    - `static` vs `class`的属性：`static`不能被重载且可以是储存或计算属性，`class`可以被重载为`static`或`class`的属性，
+    但`class`本身只能是计算属性，且重载为`static`时也必须只能是计算属性（保持父类与子类的一致原则）
+- 多态（Polymorphism）：
+  - **替换性原则（substitution）**：当使用类时，其子类同样可以被使用
+  - **内部身份原则（internal identity）**：一个类对象的类型是其内部特质，与引用的类型无关
+  - 类对象的`self`指代其对象实体，与`self`所在使用的地方无关（如：父类有方法`bark()`和`callBark()`，`callBark()`里调用`bark()`，而子类重载了`bark()`，此时调用子类的`callBark()`（继承获得）会调用子类的`bark()`，因为`self`指代的是子类实体）
+  - **优化原则**：因为多态涉及动态分配（dynaimc dispatch），会让编译器无法优化代码，runtime需要决定信息是发给哪个类型。因此可以通过声明类或属性为`final`或`private`来开启编译器的模组优化（whole module optimization），或者使用`struct`
