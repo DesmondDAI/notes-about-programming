@@ -381,4 +381,139 @@ enum PepBoy: Int {
   - **替换性原则（substitution）**：当使用类时，其子类同样可以被使用
   - **内部身份原则（internal identity）**：一个类对象的类型是其内部特质，与引用的类型无关
   - 类对象的`self`指代其对象实体，与`self`所在使用的地方无关（如：父类有方法`bark()`和`callBark()`，`callBark()`里调用`bark()`，而子类重载了`bark()`，此时调用子类的`callBark()`（继承获得）会调用子类的`bark()`，因为`self`指代的是子类实体）
-  - **优化原则**：因为多态涉及动态分配（dynaimc dispatch），会让编译器无法优化代码，runtime需要决定信息是发给哪个类型。因此可以通过声明类或属性为`final`或`private`来开启编译器的模组优化（whole module optimization），或者使用`struct`
+  - **优化原则**：因为多态涉及动态分配（dynamic dispatch），会让编译器无法优化代码，runtime需要决定信息是发给哪个类型。因此可以通过声明类或属性为`final`或`private`来开启编译器的模组优化（whole module optimization），或者使用`struct`
+
+#### 协议（Protocols）
+- 可以包括方法和属性，并且enum, struct以及class都可以实现协议
+  - 方法：`init`和`subscript`方法可以被实现
+- 协议可以包括方法的实现（protocol extension）
+- 个人看法：协议就像Java的接口，是OOP对象之间的沟通方式的一种
+- 多态同样适用于协议，可以使用`is`做类型测试（如：`if flyable is Bird {...}`）
+- 只能在文件的顶层声明协议
+- 允许optional的协议成员，但必须是通过添加`@objc`来bridged到ObjC，而且只能被class实现 (如：`@objc protocol Flier {...}`)
+- **类协议（class protocol）**：只能被类实现；协议声明时在`:`后面写上`class`，如：`protocol myDelegate: class {...}`
+  - 好处：类协议可以有特别的内存管理（因为compiler事先知道实现者肯定是class）
+- **Literal Convertibles**：有关常量转换成其他类型的规则，可以参考`ExpressibleByNilLiteral`, `ExpressibleByBooleanLiteral`, `ExpressibleByIntegerLiteral`,
+`ExpressibleByStringLiteral`, `ExpressibleByDictionaryLiteral`等等
+
+#### 泛型（Generics）
+- 某个类型的占位符，类型会在具体使用时确定具体类型
+- 泛型的声明：
+  - 泛型协议使用`Self`指代实现者（adopter）的类型，如：
+  ```swift
+  protocol Flier {
+      func flockTogetherWith(_ f:Self)
+  }
+  ```
+  - 泛型协议的associated type：协议可以声明`associatedtype`，我理解是相当于实际类型的储存属性，如：
+  ```swift
+  protocol Flier {
+      associatedtype Other
+      func flockTogetherWith(_ f:Other)
+      func mateWith(_ f:Other)
+  }
+  ```
+  当实现者确定了`Other`类型后，相当于整个protocol确定了`associatedtype`的`Other`类型
+  - 函数泛型：在函数名后声明，如：
+  ```swift
+  func takeAndReturnSameThing<T> (_ t:T) -> T {
+      return t
+  }
+  ```
+  - 对象类型的泛型：在对象类型后声明；可以同时声明多个泛型，使用`,`隔开。如：
+  ```swift
+  struct HolderOfTwoSameThings<T> {
+      var firstThing : T
+      var secondThing : T
+      init(thingOne:T, thingTwo:T) {
+          self.firstThing = thingOne
+          self.secondThing = thingTwo
+      }
+  }
+  ```
+- 类型约束（type constraints）：约束泛型能够被解释到的具体类型。如一个协议的方法需要传入adopter的类型
+（为了编译通过，必须添加一个`Flier`同时实现的父协议）:
+```swift
+protocol Superflier {}
+protocol Flier : Superflier {
+    associatedtype Other : Superflier
+    func flockTogetherWith(_ f:Other)
+}
+struct Bird : Flier {
+    func flockTogetherWith(_ f:Bird) {}
+}
+```
+- 显式指定泛型的类型解释（explicit specialization）：
+  - 协议带有`associatedtype`的泛型：使用`typealias`来为`associatedtype`分配具体类型，如：
+  ```swift
+  protocol Flier {
+    associatedtype Other
+  }
+  struct Bird: Flier {
+    typealias Other = String
+  }
+  ```
+  对象类型的泛型：创建对象时在对象名后紧跟包有具体类型的尖括号`<>`，如：
+  ```swift
+  class Dog<T> {
+    var name: T?
+  }
+  let d = Dog<String>()
+  ```
+- **注意**：泛型不能协变（即没有多态性质），如：
+```swift
+struct Wrapper<T> {
+}
+class Cat {
+}
+class CalicoCat : Cat {
+}
+let w : Wrapper<Cat> = Wrapper<CalicoCat>() // compile error
+```
+- `associatedtype`链：通过`.`操作符来获得`associatedtype`的引用：placeholder name + `.` + associated type name
+
+#### Extensions
+- 一种扩展已有对象类型功能（如：添加方法）的方式，必须声明在文件顶层
+- 约束：
+  - 不能override已有的成员（member），但可以overload已有的方法，以及static或者class member (**适合添加便利的类方法，因为提供便于理解的命名空间**)
+  - 不能声明储存属性，但可以声明计算属性
+  - 不能声明指定初始化方法（designated initializer），但可以声明便利初始化方法（convenience initializer）
+- **扩展协议**：协议的扩展可以添加包含执行的方法或属性，它们**不需要被adopter实现而是被继承**
+  - adopter可以提供协议扩展的具体方法的自己的实现版本，但自己的版本并不是override扩展里的版本，而仅仅是另一个实现；
+  内部身份（internal identity）并不适用，哪个版本会被使用与引用的类型有关；如果想获得多态的效果，必须要在原协议里声明方法
+- 泛型的扩展：扩展里可以看到（visible）泛型的类型，如:
+```swift
+class Dog<T> {
+    var name: T?
+}
+extension Dog {
+    func sayYourName() -> T? {  // T is the type of self.name
+        return self.name
+    }
+}
+```
+- 可以使用`where`子句来实现筛选泛型具体类型的效果，如筛选出合适的`Array`对象（`Array`是一个填补(placeholder)类型称为`Element`的泛型struct），
+如下例子里`where`保证实现了`Comparable`协议的`Element`才进入`for`循环：
+```swift
+extension Array where Element:Comparable {
+    func myMin() -> Element {
+        var minimum = self[0]
+        for ix in 1..<self.count {
+            if self[ix] < minimum {
+                minimum = self[ix]
+            }
+        }
+            return minimum
+    }
+}
+```
+
+#### 雨伞类型（umbrella types）
+- `Any`：swift里涵盖范围最广的类型；当声明为`Any`类型时，任何对象（包括enum, struct, class）以及函数都可以无需casting而接受
+  - 使用`as`来向下类型映射（cast down）
+  - 在Swift 3里，`Any`是Swift与ObjC类型互换的媒介（如ObjC的`id`之于Swift的`Any`）;
+  如果Swift里不是class类型，会先被包起来再转成ObjC的对象类型（如`String`到`NSString`）;
+  如果ObjC转成Swift，很多情况是被包成`Optional`，如`UserDefaults`的`object(forKey:)`
+- `AnyObject`：空协议，特指涵盖class类型，因此尽管ObjC把`id`呈现为`Any`，实际上`AnyObject`就是ObjC的`id`（可以理解为`AnyObject`为`Any`的子集）
+- 当需要知道对象内部类型时，使用`===`符号来检查引用是否指向同一个对象
+- `AnyClass`：是`AnyObject`的类型，相当于ObjC的Class类型；同样可以使用`===`来检查是否指向同一个Class对象
