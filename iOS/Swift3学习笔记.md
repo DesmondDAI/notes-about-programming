@@ -1,16 +1,31 @@
 # Swift 3 学习笔记
 
+- [Swift文件结构](#file_structure)
+- [函数 (functions)](#functions)
+- [变量 (variables)](#variables)
+- [内建变量类型 (build-in variable types)](#build-in_variable_types)
+- [对象类型 (object types)](#object_types)
+  - [枚举 (Enums)](#enums)
+  - [结构体 (Structs)](#structs)
+  - [类 (Classes)](#classes)
+- [协议 (Protocols)](#protocols)
+- [泛型 (Generics)](#generics)
+- [扩展 (Extensions)](#extensions)
+- [雨伞类型 (umbrella types)](#umbrella_types)
+- [集合类型 (collection types)](#collection_types)
+  - [数组 (array)](#array)
+
 ### Everything is an object!
 - `1` 也是对象，不过是`struct`对象，可以接收**message**。可以接收**message**的还包括`enum`
 - 因此**Swift**有3种对象类型：`class`, `struct`, `enum`
 
-### Swift文件结构
+### <a name="file_structure"></a> Swift文件结构
 - Module `import` 声明
 - 变量声明：文件顶层声明的变量为全局变量
 - 函数声明：文件顶层声明的函数也是全局函数
 - 对象类型声明：`class`, `struct`和`enum`的声明
 
-### 函数
+### <a name="functions"></a> 函数
 - 忽略external parameter name: `func sum(_ x:Int, _ y:Int) -> Int {...}`，调用时即:`sum(1,2)`;
 如果不忽略：`func sum(x:Int, y:Int) -> Int {...}`，调用时即：`sum(x:1, y:2)`
 
@@ -137,8 +152,7 @@
     - 签名：简单名称+`as`+参数与返回类型，如：`say(_ s:String, times:Int)`签名是`say as (String, Int) -> Void` （个人意见：一般来说签名比全名更精确，例如函数重载的话，因为简单名称和参数数量相同，所以只有签名才能区别开）
   - **Selector: **在添加action的参数位置使用`#selector()`传入函数名，函数名使用全名，如:`#selector(didClickOnSendButton(_:params2:params3:))`。使用`#selector()`可以让compiler检查target是否有此名字的函数，避免因为名字错误而出现的runtime错误
 
-
-### 变量
+### <a name="variables"></a> 变量
 - 变量范围
   - **全局变量**：文件顶层声明，可以被**文件内部**以及**同一个module的其他文件**看到
   - **属性**：对象类型(`class`, `enum`, `struct`)的顶层变量，分为对象属性和类属性
@@ -196,7 +210,7 @@ var now : String {
   - 对象属性的懒初始化可用于创建成本高的变量。因为在需要时才创建，所以提高了效率
   - NOTE：全局变量和静态变量的懒初始化变量默认是线程安全和atomic的，但对象属性则不是
 
-### 内建变量类型
+### <a name="build-in_variable_types"></a> 内建变量类型
 - **Bool**：`struct`类型，取值`true`或`false`
   - 仅具有`true`或`false`的值，不像其他语言(Java或C)，0可以代表false
 
@@ -269,7 +283,7 @@ var now : String {
     - 相类似的，用于实质数据需要时间生成的对象属性。
     - 允许一个变量表明自己是空的（可以理解为错误情况）还是有数值。
 
-### 对象类型(object types)
+### <a name="object_types"></a> 对象类型 (object types)
 - 对象类型的声明可以包括以下组件：
   - **初始化(initializer)**
     - 在所有properties初始化后才能使用`self`(如调用methods)
@@ -303,7 +317,7 @@ var now : String {
     - 可以声明多个`subscript`方法，使用不同的参数来区分
   - **内嵌对象类型声明**
 
-#### Enums
+#### <a name="enums"></a> 枚举 (Enums)
 - 数值类型(value type)
 - `Enums`声明包括case声明，每个case就是一个enum的对象
 - 默认初始化一个enum对象：enum名字 + `.`符号 + case名字，如`let place = Position.center`；如果类型已知，可以省略enum名字，即：`let place: Position = .center`
@@ -327,14 +341,14 @@ enum PepBoy: Int {
   - 可以有对象属性或类属性；对象属性只能是计算属性
   - 可以有对象方法或类方法；涉及更改`enum`对象或属性的方法需要在前面加`mutating`
 
-#### Structs
+#### <a name="structs"></a> 结构体 (Structs)
 - 数值类型 (value type)：更改`struct`对象属性实质是更改整个`struct`对象
 - 自带隐式`init()`；如果显式声明`init`，隐式的会失效
 - 如果`struct`对象有储存属性（stored properties）但没有声明显式`init`的话，隐式的`init`会是**memberwise initializer**; 如果有显式`init`的话，显式`init`必须能够初始化所有的储存属性
 - 可以有对象方法或类方法；涉及更改`struct`对象或属性的方法需要在前面加`mutating`
 - 带有类属性的`struct`适合用作全局常量
 
-#### Classes
+#### <a name="classes"></a> 类 (Classes)
 - 可以包括`class`或`static`的属性和方法：最大区别在`static`的不能被重载（类似`final`的效果）
 - 引用类型 (reference type) --> 对比数值类型有以下特点：
   - **易变性 (mutability)**：引用对象的对象属性可以被更改
@@ -383,7 +397,7 @@ enum PepBoy: Int {
   - 类对象的`self`指代其对象实体，与`self`所在使用的地方无关（如：父类有方法`bark()`和`callBark()`，`callBark()`里调用`bark()`，而子类重载了`bark()`，此时调用子类的`callBark()`（继承获得）会调用子类的`bark()`，因为`self`指代的是子类实体）
   - **优化原则**：因为多态涉及动态分配（dynamic dispatch），会让编译器无法优化代码，runtime需要决定信息是发给哪个类型。因此可以通过声明类或属性为`final`或`private`来开启编译器的模组优化（whole module optimization），或者使用`struct`
 
-#### 协议（Protocols）
+### <a name="protocols"></a> 协议（Protocols）
 - 可以包括方法和属性，并且enum, struct以及class都可以实现协议
   - 方法：`init`和`subscript`方法可以被实现
 - 协议可以包括方法的实现（protocol extension）
@@ -396,7 +410,7 @@ enum PepBoy: Int {
 - **Literal Convertibles**：有关常量转换成其他类型的规则，可以参考`ExpressibleByNilLiteral`, `ExpressibleByBooleanLiteral`, `ExpressibleByIntegerLiteral`,
 `ExpressibleByStringLiteral`, `ExpressibleByDictionaryLiteral`等等
 
-#### 泛型（Generics）
+### <a name="generics"></a> 泛型（Generics）
 - 某个类型的占位符，类型会在具体使用时确定具体类型
 - 泛型的声明：
   - 泛型协议使用`Self`指代实现者（adopter）的类型，如：
@@ -472,7 +486,7 @@ let w : Wrapper<Cat> = Wrapper<CalicoCat>() // compile error
 ```
 - `associatedtype`链：通过`.`操作符来获得`associatedtype`的引用：placeholder name + `.` + associated type name
 
-#### Extensions
+### <a name="extensions"></a> 扩展 (Extensions)
 - 一种扩展已有对象类型功能（如：添加方法）的方式，必须声明在文件顶层
 - 约束：
   - 不能override已有的成员（member），但可以overload已有的方法，以及static或者class member (**适合添加便利的类方法，因为提供便于理解的命名空间**)
@@ -503,12 +517,12 @@ extension Array where Element:Comparable {
                 minimum = self[ix]
             }
         }
-            return minimum
+        return minimum
     }
 }
 ```
 
-#### 雨伞类型（umbrella types）
+### <a name="umbrella_types"></a> 雨伞类型（umbrella types）
 - `Any`：swift里涵盖范围最广的类型；当声明为`Any`类型时，任何对象（包括enum, struct, class）以及函数都可以无需casting而接受
   - 使用`as`来向下类型映射（cast down）
   - 在Swift 3里，`Any`是Swift与ObjC类型互换的媒介（如ObjC的`id`之于Swift的`Any`）;
@@ -517,3 +531,30 @@ extension Array where Element:Comparable {
 - `AnyObject`：空协议，特指涵盖class类型，因此尽管ObjC把`id`呈现为`Any`，实际上`AnyObject`就是ObjC的`id`（可以理解为`AnyObject`为`Any`的子集）
 - 当需要知道对象内部类型时，使用`===`符号来检查引用是否指向同一个对象
 - `AnyClass`：是`AnyObject`的类型，相当于ObjC的Class类型；同样可以使用`===`来检查是否指向同一个Class对象
+
+### <a name="collection_types"></a> 集合类型（collection types）
+#### <a name="array"></a> 数组（Array）
+- 实质是struct，属于泛型，即`Array<Element>`，不可以是离散(sparse)
+- 元素(element)必须属于同一类型，遵循多态特性
+- 声明数组类型同时显式注明元素类型的管用写法是方括号`[]`包着类型，如`[Int]`，如：
+```swift
+let myArray1 = [Int]()
+let myArray2: [Int] = []
+```
+- 如果元素有子类和父类，数组会使用共有的类型（即父类，或协议），如：
+```swift
+let arr : [Any] = [1, "howdy"]            // mixed bag
+let arr2 : [Flier] = [Insect(), Bird()]   // protocol adopters
+```
+- 数组有一个参数可以是序列(sequence)的初始化方法，即输入为序列，输出为元素是遍历序列创建的数组，如：
+```swift
+let myArray1 = Array(1...3)    // array of Int [1, 2, 3]
+let myArray2 = Array("hey".characters)    // array of String ["h", "e", "y"]
+let myArray3 = Array(myDict)    // array of tuples of key-value pairs of myDict
+```
+- `init(repeating:count:)`生成相同元素的数组，如：
+```swift
+let strings : [String?] = Array(repeating:nil, count:100)    // array of 100 nil
+```
+- 数组的类型映射是针对每一个元素的操作，即当所有元素都映射成功，数组才能映射成功；类型比较同理
+（如：`if myArray is [Dog] {...}`）
