@@ -13,7 +13,8 @@
 - [扩展 (Extensions)](#extensions)
 - [雨伞类型 (umbrella types)](#umbrella_types)
 - [集合类型 (collection types)](#collection_types)
-  - [数组 (array)](#array)
+  - [数组 (Array)](#array)
+  - [字典 (Dictionary)](#dictionary)
 
 ### Everything is an object!
 - `1` 也是对象，不过是`struct`对象，可以接收**message**。可以接收**message**的还包括`enum`
@@ -558,3 +559,63 @@ let strings : [String?] = Array(repeating:nil, count:100)    // array of 100 nil
 ```
 - 数组的类型映射是针对每一个元素的操作，即当所有元素都映射成功，数组才能映射成功；类型比较同理
 （如：`if myArray is [Dog] {...}`）
+- subscript: 方括号可以是`Range`，此时返回的是称作ArraySlice的对象。ArraySlice与Array类似，
+但不是一个新的对象，index与原Array的所指相同，即ArraySlice其实是一种指向原Array某一部分的方式，如：
+```swift
+let arr = ["manny", "moe", "jack"]
+let slice = arr[1...2]
+print(slice[1]) // moe
+```
+- 实用的属性和方法：
+  - `count`：只读属性，返回数组的元素数目
+  - `first`和`last`：只读属性，返回数组的第一和最后一个元素，Optional类型
+  - `startIndex`和`endIndex`：数值分别是`0`和对应数组的`count`
+  - `suffix(_:)`和`prefix(_:)`：最后/最开始的n个元素，返回ArraySlice，即n超出数组范围也不会crash
+  (如果是大于数组数目，则返回包含所有元素的ArraySlice)
+  - `index(of:)`：返回参数在数组的第一次出现的index，Optional
+  - `contains(_:)`：返回数组是否包含参数（元素类型）的Bool
+  - `start(with:)`：返回数组是否以参数（Array类型）为开头的Bool
+  - `min()`和`max()`：返回数组的最小/最大值；元素可以实现`Comparable`协议或者传入参数为比较函数
+  - `append(_:)`和`append(contentsOf:)`：在数组末尾添加元素/数组
+  - `insert(_:at:)`和`insert(contentsOf:at:)`：在数组`at`的index之前插入元素/数组
+  - `joined(separator:)`：把二维数组连成一维数组，并以`separator`参数为分界元素，如：
+  ```swift
+  let arr = [[1,2], [3,4], [5,6]]
+  let joined = Array(arr.joined(separator:[10,11]))    // [1, 2, 10, 11, 3, 4, 10, 11, 5, 6]
+  ```
+  - `sort()`和`sorted()`：在原数组排序/返回排完序的新数组；元素可以实现`Comparable`或传入参数为比较函数
+  - **枚举和转换的相关方法：**
+    - `forEach(_:)`：传入一个处理每个数组元素的函数；效果等同for loop
+    - `filter(_:)`：传入一个函数，返回一个新的数组；函数接收每个原数组元素，并返回Bool以决定当前元素的取舍，如：
+    ```swift
+    let pepboys = ["Manny", "Moe", "Jack"]
+    let pepboys2 = pepboys.filter {$0.hasPrefix("M")}    // [Manny, Moe]
+    ```
+    - `map(_:)`：传入一个函数，返回一个新的数组；函数接收每个原数组元素，并对其操作并返回元素，
+    返回元素可以与原元素不同类型，如：
+    ```swift
+    let arr = [1,2,3]
+    let arr2 = arr.map {$0 * 2}    // [2,4,6]
+    ```
+    - `reduce`：整合数组的所有元素并返回一个结果值；第一个参数是初始结果值，第二个参数是函数：
+    函数参数是结果值和元素对象，返回计算后的结果值，如：
+    ```swift
+    let arr = [1, 4, 9, 13, 112]
+    let sum = arr.reduce(0) {$0 + $1}    // 139
+    ```
+  - Swift与ObjC之间的类型转换：
+    - Array -> NSArray: NSArray必须包含对象元素，因此Array需要对元素进行转换；使用`as`进行类型转换；
+    不可以用`as`转换成NSMutableArray，而要使用其`init(array:)`方法
+
+#### <a name="dictionary"></a> 字典（Dictionary）
+- 实质同样是struct，无顺序；属于泛型，即`Dictionary<Key, Value>`，因此所有键必须同一类型，值(value)也必须是同一类型（ObjC的值可以是不同类型的对象））；键(key)必须是`Equatable`和`Hashable`
+- 简写：`[Key: Value]`，如：`var dict = [String: String]()`；空字典：`[:]`
+- 用键的下标(subscript)可以获得对应的值，如：`dict["CA"]`
+- 如果字典的引用是变量(var)，可以用键的下标来**修改(如已有值)**或**创建(如没有值)**对应的值
+- 实用的属性和方法：
+  - `count`：返回键值对的数量
+  - `keys`/`values`：返回所有的键/值的Collection对象，可以使用`Array(dict.keys)`的方式来创建Array对象
+  - `updateValue(forKey:)`：与利用键下标修改/创建对应的值功能类似，不同的是返回旧值(修改时)/`nil`(创建时)
+  - `removeValue(forKey:)`：删除值，会返回删除的值
+- Swift与ObjC之间的类型转换会使用`[AnyHashable: Any]`的形式
+  - ObjC到Swift的字典的值有可能包括多个类型，因此需要程序员自己对每一个值进行类型映射
