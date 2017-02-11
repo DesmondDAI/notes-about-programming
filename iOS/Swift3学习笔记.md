@@ -15,6 +15,10 @@
 - [集合类型 (collection types)](#collection_types)
   - [数组 (Array)](#array)
   - [字典 (Dictionary)](#dictionary)
+  - [集合 (Set)](#set)
+- [流程控制 (flow control)](#flow-control)
+  - [if](#if)
+  - [switch](#switch)
 
 ### Everything is an object!
 - `1` 也是对象，不过是`struct`对象，可以接收**message**。可以接收**message**的还包括`enum`
@@ -619,3 +623,141 @@ print(slice[1]) // moe
   - `removeValue(forKey:)`：删除值，会返回删除的值
 - Swift与ObjC之间的类型转换会使用`[AnyHashable: Any]`的形式
   - ObjC到Swift的字典的值有可能包括多个类型，因此需要程序员自己对每一个值进行类型映射
+
+#### <a name="set"></a> 集合（Set）
+- 实质同样是struct，无顺序；元素必须是同一类型，同时是`Equatable`和`Hashable`；
+hash值用于快速读取元素，因此性能上比Array好；对象可以从任何Sequence初始化得到
+- 没有literal表达，但可以接受Array的literal转换得到，如：`let mySet: Set<Int> = [1, 2, 3]`
+- **Hint**: Array -> Set -> Array的转换可以快速得到元素唯一的Array对象，但顺序不保证
+- **注意**：当Set为空时，调用`removeFirst`方法会crash，相对可以使用`popFirst`方法
+- **选项集合（Option Sets）**：用处在于方便处理ObjC的位掩码（bitmask）
+  - 严格说不是Set，但具有和Set类似的方法，如可以像Set一样使用`contains(_:)`, `remove(_:)`和`insert(_:)`的方法，如：
+  ```swift
+  var opts = UIViewAnimationOptions.autoreverse
+  opts.insert(.repeat)
+  ```
+  - 同样可以接受Array的literal来初始化：
+  ```swift
+  let opts: UIViewAnimationOptions = [.autoreverse, .repeat]
+  ```
+- Swift与ObjC类型：Set与NSSet连通，无类型的媒介是`Set<AnyHashable>`
+
+### <a name="flow-control"></a> 流程控制（flow control）
+- 基本特征：条件不需要使用括号`()`包着；花括号`{}`不可以忽略
+  
+#### <a name="if"></a> if:
+- **conditional binding**: 有条件地解包Optional并创建本地变量(`let`或`var`)，
+即`if let myObject = self.myObject`
+- 判断多个条件时可以使用逗号`,`连接起来，判断从左到右执行，**同时左边创建的变量在右边可以使用**；
+只要有一个返回`false`就停止，如：
+```swift
+if let myNum = self.myNum, let sum = myNum + 8 {...}
+```
+Hint: 同样效果可以使用`guard`实现
+
+#### <a name="switch"></a> switch:
+- 基本特征：必须穷举；`case`下的执行不能为空，最少也要写`break`
+- `case`值属于特别的计算模式，与tag进行比较是使用模式比对运算符(pattern-matching operator)：`~=`，
+此方式为switch带来了丰富的功能：
+  - 模式可以包括下划线`_`来代表所有的值并且不关注它们，可以作为`default`来使用，如：
+  ```swift
+  switch i {
+  case 1:
+      print("You have 1 thing!")
+  case _:
+      print("You have many things!")
+  }
+  ```
+  - 模式可以包括创建并赋值本地变量(unconditional binding)来代表所有的值，同样可以作为`default`来使用，如：
+  ```swift
+  switch i {
+  case 1:
+      print("You have 1 thing!") ̑
+  case let n:
+      print("You have \(n) things!")
+  }
+  ```
+  - 如果tag是`Comparable`，`case`可以包括`Range`，模式比对使用`Range`的`contains`方法，如：
+  ```swift
+  switch i {
+  case 1:
+      print("You have 1 thing!")
+  case 2...10:
+      print("You have \(i) things!")
+  default:
+      print("You have more things than I can count!")
+  }
+  ```
+  - 如果tag是Optional，`case`可以实现conditional binding，只需要在每个`case`的模式后面添加问号`?`，如：
+  ```swift
+  switch i {
+  case 1?:
+      print("You have 1 thing!")
+  case let n?:
+      print("You have \(n) thing!")
+  case nil: break
+  }
+  ```
+  - 如果tag是`Bool`，switch可以作为`if...else if`使用，如：
+  ```swift
+  func position(for bar: UIBarPositioning) -> UIBarPosition {
+      switch true {
+      case bar === self.navbar:  return .topAttached
+      case bar === self.toolbar: return .bottom
+      default:                   return .any
+      }
+  }
+  ```
+  - 模式可以添加关键字`where`来添加限制条件，如：
+  ```swift
+  switch i {
+  case let j where j < 0:
+      print("i is negative")
+  case let j where j > 0:
+      print("i is positive")
+  case 0:
+      print("i is 0")
+  default:break
+  }
+  ```
+  - 模式也可以添加关键字`is`来检查tag的类型，如：
+  ```swift
+  switch d {
+  case is NoisyDog:
+      print("You have a noisy dog!")
+  case _:
+      print("You have a dog.")
+  }
+  ```
+  - 模式可以使用关键字`as`来构建条件，即tag可以映射到某类型时，`case`才进入，如：
+  ```swift
+  switch d {
+  case let nd as NoisyDog:
+      nd.beQuiet()
+  case let d:
+      d.bark()
+  }
+  ```
+  - 可以一次执行多个测试：通过声明tag和模式为tuple来实现，如：
+  ```swift
+  switch (d["size"], d["desc"]) {
+  case let (size as Int, desc as String):
+      print("You have size \(size) and it is \(desc)")
+  default:
+      break
+  }
+  ```
+  - 可以通过逗号`,`来组合多个case的值，如：
+  ```swift
+  switch i {
+  case 1,3,5,7,9:
+      print("You have a small odd number of thingies.")
+  case 2,4,6,8,10:
+      print("You have a small even number of thingies.")
+  default:
+      print("You have too many thingies for me to count.")
+  }
+  ```
+  - 可以使用关键字`fallthrough`来跳过当前case里剩余的代码，并**无条件地**进入下一个case。因此下一个case的测试不会执行，
+  因此如有本地变量赋值代码的话，本地变量不会在此case出现
+- 关键字`??`用于unwrap optional为nil时使用替换值的逻辑，如：`let myNum = i1 as? Int ?? 0`
