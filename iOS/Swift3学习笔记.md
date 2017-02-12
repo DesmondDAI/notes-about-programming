@@ -265,6 +265,7 @@ var now : String {
 
 - **Optional**：可以看作一种数据类型，形象上可以理解为盒子，里面可以装着某个特定类型的数据，也可以是空的
   - 声明方式：1)`var stringMayBe = Optional("howdy")` 2)`var stringMayBe: String? = "howdy"`
+  - 实质是Enum，包括`.none`和`.some`2个case，同时`.some`的associated value就是包着的数据
   - `Optional`包了一种数据类型之后，就不能被赋值其他类型的值
   - 正式来说，`Optional`是一种泛型，如包了`String`的`Optional`是Optional<String>
   - 把一个同类型的值（即`Optional`包着的类型的其他值）复制给`Optional`时，编译器会隐式将新值包成`Optional`
@@ -644,7 +645,7 @@ hash值用于快速读取元素，因此性能上比Array好；对象可以从�
 
 ### <a name="flow-control"></a> 流程控制（flow control）
 - 基本特征：条件不需要使用括号`()`包着；花括号`{}`不可以忽略
-  
+
 #### <a name="if"></a> if:
 - **conditional binding**: 有条件地解包Optional并创建本地变量(`let`或`var`)，
 即`if let myObject = self.myObject`
@@ -756,6 +757,49 @@ Hint: 同样效果可以使用`guard`实现
       print("You have a small even number of thingies.")
   default:
       print("You have too many thingies for me to count.")
+  }
+  ```
+  - **对于带有associated values的Enum**，如：
+  ```swift
+  enum Error {
+    case number(Int)
+    case message(String)
+    case fatal
+  }
+  ```
+  switch可以判断case的同时提取associated value，`let`或`var`可以在`case`后面或者括号`()`里，如：
+  ```swift
+  switch err {
+    case .number(let theNumber):
+        print("It is a number: \(theNumber)")
+    case let .message(theMessage):
+        print("It is a message: \(theMessage)")
+    case .fatal:
+        print("It is fatal")
+  }
+  ```
+  如果不想提取associated value，可以在括号里使用对应的模式来匹配，如：
+  ```swift
+  switch err {
+    case .number(1...Int.max):
+        print("It's a positive error number")
+    case .number(Int.min...(-1)):
+        print("It's a negative error number")
+    case .number(0):
+        print("It's a zero error number")
+    default:break
+  }
+  ```
+  - 如果只是想判断并提取某个Enum case的associate value，可以使用`if case`语法，如：
+  ```swift
+  if case let .number(n) = err {
+        print("The error number is \(n)")
+  }
+  ```
+  此处的case也可以使用逗号`,`组合，如：
+  ```swift
+  if case let .number(n) = err, n < 0 {
+        print("The negative error number is \(n)")
   }
   ```
   - 可以使用关键字`fallthrough`来跳过当前case里剩余的代码，并**无条件地**进入下一个case。因此下一个case的测试不会执行，
