@@ -19,6 +19,8 @@
 - [流程控制 (flow control)](#flow-control)
   - [if](#if)
   - [switch](#switch)
+  - [while](#while-loop)
+  - [for](#for-loop)
 
 ### Everything is an object!
 - `1` 也是对象，不过是`struct`对象，可以接收**message**。可以接收**message**的还包括`enum`
@@ -207,8 +209,7 @@ var now : String {
   - `didSet`：接受到的是旧的值，默认是`oldValue`，可以改名。新值此时已经在变量中并且可以引用
   - 计算变量值不能添加上述观察者因为不需要：在`set`里可以自由在设定变量值前后添加逻辑
 
-- 懒初始化(lazy initialization)：如果一个变量在声明中同时有声明初始化，在懒初始化下，只有当
-变量被取用(access)时才会计算或赋初始值
+- 懒初始化(lazy initialization)：如果一个变量在声明中同时有声明初始化，在懒初始化下，只有当变量被取用(access)时才会计算或赋初始值。**注意：懒初始化是储存变量，因此闭包调用后的结果被储存下来，下次调用该变量时是直接取用储存值而不是调用闭包**
   - 默认懒初始化：全局变量(global)和静态变量(static)
   - 需要显式声明初始化：对象属性。如：`lazy var name = "Desmond"`
   - 可用于创建singleton
@@ -805,3 +806,21 @@ Hint: 同样效果可以使用`guard`实现
   - 可以使用关键字`fallthrough`来跳过当前case里剩余的代码，并**无条件地**进入下一个case。因此下一个case的测试不会执行，
   因此如有本地变量赋值代码的话，本地变量不会在此case出现
 - 关键字`??`用于unwrap optional为nil时使用替换值的逻辑，如：`let myNum = i1 as? Int ?? 0`
+
+#### <a name="while-loop"></a> while loop:
+- 条件可以包括conditional binding，直到Optional为`nil`时才退出循环，如：
+```swift
+while let p = self.popItem() {...}
+```
+- 相对switch case和if case，同样有while case的用法，即匹配Enum case并提取associated value，如：
+```swift
+let arr : [Error] = [
+        .message("ouch"), .message("yipes"), .number(10), .number(-1), .fatal
+]
+var i = 0
+while case let .message(message) = arr[i]  {
+    print(message) // "ouch", then "yipes"; then the loop stops
+    i += 1
+}
+```
+#### <a name="for-loop"></a> for loop:
