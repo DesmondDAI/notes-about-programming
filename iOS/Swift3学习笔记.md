@@ -36,6 +36,11 @@
 - 忽略external parameter name: `func sum(_ x:Int, _ y:Int) -> Int {...}`，调用时即:`sum(1,2)`;
 如果不忽略：`func sum(x:Int, y:Int) -> Int {...}`，调用时即：`sum(x:1, y:2)`
 
+- 函数的参数初始情况下是**constant**: 函数体内不能改变参数值；如果需要修改参数（导致对应的参数同时改变），需要在参数类型前加上`inout`；同时传入的参数需要是`var`，传递时需要在变量前加上`&`以表示其可以被修改；`inout`参数不可以有初始值，同时数量可变的参数（e.g. `print()里的参数`）不可以`inout`。具体执行步骤：
+  - 函数调用，参数的变量数值被复制；
+  - 参数被修改；
+  - **函数返回时**，被修改的参数被赋值到原来对应的变量中
+
 - 不一样的external和internal parameter name: `func sum(num1 x:Int, num2 y:Int) -> Int {...}`，函数内部使用`x`和`y`， 调用时用：`sum(num1:1, num2:2)`
 
 - 初始化参数，即调用者没有给参数时，函数内部就使用初始化值：`func sum(x:Int, y:Int = 2)`，如果调用`sum(1)`，其实是`sum(1, 2)`
@@ -146,11 +151,10 @@
     ```
   - 箭头标志后的类型都是返回值类型
 
-- 函数作为参数，在调用函数体内捕获调用环境：
-  - 需要开启此功能，调用函数体需要指明：`@escaping`
-  ```swift
-  func returnFuncToBeCalledLater(_ f:@escaping () -> ()) -> () -> () {...}
-  ```
+- 函数作为参数，需要在调用函数返回之后被调用（e.g.async执行）时，要在调用函数的参数类型前添加`@escaping` (在调用函数体内会捕获调用环境）：
+```swift
+func returnFuncToBeCalledLater(_ f:@escaping () -> ()) -> () -> () {...}
+```
 
 - 函数引用
   - 函数的简单名称(bare name)称为函数引用，如：`bark()`和`bark(loudly:Bool)`的函数引用都是`bark`
