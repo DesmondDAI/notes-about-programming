@@ -663,9 +663,9 @@ Hint: 同样效果可以使用`guard`实现
 
 #### <a name="switch"></a> switch:
 - 基本特征：必须穷举；`case`下的执行不能为空，最少也要写`break`
-- `case`值属于特别的计算模式，与tag进行比较是使用模式比对运算符(pattern-matching operator)：`~=`，
+- `case`值属于特别的计算模式，与tag进行比较是使用模式比对运算符(pattern matching)：`~=`，
 此方式为switch带来了丰富的功能：
-  - 模式可以包括下划线`_`来代表所有的值并且不关注它们，可以作为`default`来使用，如：
+  - **wildcard pattern**: 模式可以包括下划线`_`来代表所有的值并且不关注它们，可以作为`default`来使用，如：
   ```swift
   switch i {
   case 1:
@@ -694,7 +694,7 @@ Hint: 同样效果可以使用`guard`实现
       print("You have more things than I can count!")
   }
   ```
-  - 如果tag是Optional，`case`可以实现conditional binding，只需要在每个`case`的模式后面添加问号`?`，如：
+  - **optional pattern**: 如果tag是Optional，`case`可以实现conditional binding，只需要在每个`case`的模式后面添加问号`?`，如：
   ```swift
   switch i {
   case 1?:
@@ -726,7 +726,7 @@ Hint: 同样效果可以使用`guard`实现
   default:break
   }
   ```
-  - 模式也可以添加关键字`is`来检查tag的类型，如：
+  - **is type-casting pattern**: 模式也可以添加关键字`is`来检查tag的类型，如：
   ```swift
   switch d {
   case is NoisyDog:
@@ -735,7 +735,7 @@ Hint: 同样效果可以使用`guard`实现
       print("You have a dog.")
   }
   ```
-  - 模式可以使用关键字`as`来构建条件，即tag可以映射到某类型时，`case`才进入，如：
+  - **as type-casting pattern**: 模式可以使用关键字`as`来构建条件，即tag可以映射到某类型时，`case`才进入，如：
   ```swift
   switch d {
   case let nd as NoisyDog:
@@ -744,7 +744,7 @@ Hint: 同样效果可以使用`guard`实现
       d.bark()
   }
   ```
-  - 可以一次执行多个测试：通过声明tag和模式为tuple来实现，如：
+  - **tuple pattern**: 可以一次执行多个测试：通过声明tag和模式为tuple来实现，如：
   ```swift
   switch (d["size"], d["desc"]) {
   case let (size as Int, desc as String):
